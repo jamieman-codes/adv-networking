@@ -199,7 +199,7 @@ def main():
 
             _, mid = client.subscribe(subscribe_topic, qos=1)
             message = template.format(device_id, 'subscribe')
-            gateway_state.subscriptions[subscribe_topic] = client_addr
+            gatewayState.subscriptions[subscribe_topic] = client_addr
 
             udpSerSock.sendto(message.encode('utf8'), client_addr)
 
