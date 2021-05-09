@@ -13,9 +13,9 @@ COLOURS = {"WHITE": (255,255,255),
             "TURQUOISE": (0, 255, 255),
             "ORANGE": (255, 128, 0),
             "PINK": (255, 102, 255),
-            "BROWN": (102, 51, 0)}
+            "BROWN": (51, 25, 0)}
 
-ADDR = '192.168.0.12'
+ADDR = '192.168.0.99'
 PORT = 10000
 DEVICE_ID = "led-matrix"
 # Create a UDP socket
@@ -69,7 +69,14 @@ try:
         print('Client received {}'.format(response))
         responseSplit = response.split(" ")
         if responseSplit[0] == "ON":
-            if responseSplit[1] in COLOURS.keys():
+            if responseSplit[1] == "MATRIX":
+                resMatrix = responseSplit[2].split(",")
+                matrix = []
+                for colour in resMatrix:
+                    matrix.append(COLOURS[colour])
+                sense.set_pixels(matrix)
+                print("LED Matrix showing custom matrix")
+            elif responseSplit[1] in COLOURS.keys():
                 sense.clear(COLOURS[responseSplit[1]])
                 print("LED Matrix showing: {}".format(responseSplit[1]))
             else:

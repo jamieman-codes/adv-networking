@@ -102,7 +102,17 @@ def on_message(unused_client, unused_userdata, message):
         payloadSplit = payload.split(" ")
         payloadEncoded = payload.rstrip().encode('utf8')
         if payloadSplit[0] == "ON":
-            if payloadSplit[1] in COLOURS:
+            if payloadSplit[1] == "MATRIX": #Example matrix command: ON MATRIX BLUE,GREEN,BLUE,YELLOW etc.. for 64 length
+                matrix = payloadSplit[2].split(",")
+                if len(matrix) != 64:
+                    print('Matrix invalid length')
+                else:
+                    for colour in matrix:
+                        if colour not in COLOURS:
+                            print("Invalid colour in matrix: {}".format(colour))
+                            return
+                    udpSerSock.sendto(payloadEncoded, client_addr)
+            elif payloadSplit[1] in COLOURS:
                 udpSerSock.sendto(payloadEncoded, client_addr)
             else:
                 print('Unrecognized command: {}'.format(payload))
@@ -112,6 +122,8 @@ def on_message(unused_client, unused_userdata, message):
             print('Unrecognized command: {}'.format(payload))
     except KeyError:
         print('Nobody subscribes to topic {}'.format(message.topic))
+    except IndexError:
+        print("Invalid command: {}".format(payload))
 
 #Create paho MQTT client
 def create_client():
