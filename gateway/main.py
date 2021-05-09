@@ -25,7 +25,7 @@ PORT = 10000
 BUFSIZE = 2048
 ADDR = (HOST, PORT)
 
-VALID_SECOND = ["WHITE", "RED", "BLUE", "GREEN", "PURPLE", "YELLOW"]
+COLOURS = ["WHITE", "RED", "BLUE", "GREEN", "PURPLE", "YELLOW", "TURQUOISE", "ORANGE", "PINK", "BROWN"]
 
 class State:
     mqtt_config_topic = '/devices/{}/config'.format(GATEWAY_ID) # This is the topic that the device will receive configuration updates on.
@@ -102,7 +102,7 @@ def on_message(unused_client, unused_userdata, message):
         payloadSplit = payload.split(" ")
         payloadEncoded = payload.rstrip().encode('utf8')
         if payloadSplit[0] == "ON":
-            if payloadSplit[1] in VALID_SECOND:
+            if payloadSplit[1] in COLOURS:
                 udpSerSock.sendto(payloadEncoded, client_addr)
             else:
                 print('Unrecognized command: {}'.format(payload))
