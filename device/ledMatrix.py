@@ -5,7 +5,7 @@ from sense_hat import SenseHat
 #Constants
 WHITE = (255,255,255)
 OFF = (0,0,0)
-ADDR = '192.168.0.61'
+ADDR = '192.168.0.12'
 PORT = 10000
 DEVICE_ID = "led-matrix"
 # Create a UDP socket
@@ -58,11 +58,11 @@ try:
         response = client_sock.recv(4096).decode('utf8')
         print('Client received {}'.format(response))
         if response.upper() == 'ON' or response.upper() == b'ON':
-            #GPIO.output(LED_IOPIN, GPIO.HIGH)
+            
             sense.clear(WHITE)
             print("LED Matrix showing: WHITE")
         elif response.upper() == "OFF" or response.upper() == b'OFF':
-            #GPIO.output(LED_IOPIN, GPIO.LOW)
+            
             sense.clear(OFF)
             print("LED Matrix OFF")
         else:
