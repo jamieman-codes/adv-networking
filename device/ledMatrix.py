@@ -3,8 +3,14 @@ import sys
 from sense_hat import SenseHat
 
 #Constants
-WHITE = (255,255,255)
 OFF = (0,0,0)
+COLOURS = {"WHITE": (255,255,255),
+            "RED": (255, 0 ,0),
+            "BLUE" : (0, 0, 255),
+            "GREEN" : (0, 255, 0),
+            "PURPLE": (153, 0, 153),
+            "YELLOW": (255, 255, 0)}
+
 ADDR = '192.168.0.12'
 PORT = 10000
 DEVICE_ID = "led-matrix"
@@ -57,12 +63,14 @@ try:
     while True:
         response = client_sock.recv(4096).decode('utf8')
         print('Client received {}'.format(response))
-        if response.upper() == 'ON' or response.upper() == b'ON':
-            
-            sense.clear(WHITE)
-            print("LED Matrix showing: WHITE")
-        elif response.upper() == "OFF" or response.upper() == b'OFF':
-            
+        responseSplit = response.split(" ")
+        if responseSplit[0] == "ON":
+            if responseSplit[1] in COLOURS.keys():
+                sense.clear(COLOURS[responseSplit[1]])
+                print("LED Matrix showing: {}".format(responseSplit[1]))
+            else:
+                print('Invalid message {}'.format(response))
+        elif responseSplit[0] == "OFF":
             sense.clear(OFF)
             print("LED Matrix OFF")
         else:

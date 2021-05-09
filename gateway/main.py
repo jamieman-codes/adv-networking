@@ -25,7 +25,6 @@ PORT = 10000
 BUFSIZE = 2048
 ADDR = (HOST, PORT)
 
-VALID_FIRST = ["ON", "OFF"]
 VALID_SECOND = ["WHITE", "RED", "BLUE", "GREEN", "PURPLE", "YELLOW"]
 
 class State:
@@ -101,8 +100,14 @@ def on_message(unused_client, unused_userdata, message):
         client_addr = gatewayState.subscriptions[message.topic]
         print('Relaying config[{}] to {}'.format(payload, client_addr))
         payloadSplit = payload.split(" ")
-        if payloadSplit[0] in VALID_FIRST:
-            udpSerSock.sendto(payload.rstrip().encode('utf8'), client_addr)
+        payloadEncoded = payload.rstrip().encode('utf8')
+        if payloadSplit[0] == "ON":
+            if payloadSplit[1] in VALID_SECOND:
+                udpSerSock.sendto(payloadEncoded, client_addr)
+            else:
+                print('Unrecognized command: {}'.format(payload))
+        elif payloadSplit[0] == "OFF":
+            udpSerSock.sendto(payloadEncoded, client_addr)
         else:
             print('Unrecognized command: {}'.format(payload))
     except KeyError:
