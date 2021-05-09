@@ -29,18 +29,18 @@ def SendCommand(sock, message):
     return response
 
 
-def MakeMessage(device_id, action, data=''):
+def MakeMessage( action, data=''):
     if data:
         return '{{ "device" : "{}", "action":"{}", "data" : "{}" }}'.format(
-            device_id, action, data)
+            DEVICE_ID, action, data)
     else:
         return '{{ "device" : "{}", "action":"{}" }}'.format(
-            device_id, action)
+            DEVICE_ID, action)
 
 
 def RunAction(action, data=''):
     global client_sock
-    message = MakeMessage(device_id, action, data)
+    message = MakeMessage(action, data)
     if not message:
         return
     print('Send data: {} '.format(message))
@@ -60,15 +60,11 @@ try:
         if response.upper() == 'ON' or response.upper() == b'ON':
             #GPIO.output(LED_IOPIN, GPIO.HIGH)
             sense.clear(WHITE)
-            sys.stdout.write('\r>> ' + bcolors.OKGREEN + bcolors.CBLINK +
-                             " LED is ON " + bcolors.ENDC + ' <<')
-            sys.stdout.flush()
+            print("LED Matrix showing: WHITE")
         elif response.upper() == "OFF" or response.upper() == b'OFF':
             #GPIO.output(LED_IOPIN, GPIO.LOW)
             sense.clear(OFF)
-            sys.stdout.write('\r >>' + bcolors.CRED + bcolors.BOLD +
-                             ' LED is OFF ' + bcolors.ENDC + ' <<')
-            sys.stdout.flush()
+            print("LED Matrix OFF")
         else:
             print('Invalid message {}'.format(response))
 
