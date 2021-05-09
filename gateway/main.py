@@ -25,7 +25,7 @@ PORT = 10000
 BUFSIZE = 2048
 ADDR = (HOST, PORT)
 
-COLOURS = ["WHITE", "RED", "BLUE", "GREEN", "PURPLE", "YELLOW", "TURQUOISE", "ORANGE", "PINK", "BROWN"]
+COLOURS = ["WHITE", "RED", "BLUE", "GREEN", "PURPLE", "YELLOW", "TURQUOISE", "ORANGE", "PINK", "BROWN", "BLACK"]
 
 class State:
     mqtt_config_topic = '/devices/{}/config'.format(GATEWAY_ID) # This is the topic that the device will receive configuration updates on.

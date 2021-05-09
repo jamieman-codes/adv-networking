@@ -3,7 +3,6 @@ import sys
 from sense_hat import SenseHat
 
 #Constants
-OFF = (0,0,0)
 COLOURS = {"WHITE": (255,255,255),
             "RED": (255, 0 ,0),
             "BLUE" : (0, 0, 255),
@@ -13,7 +12,8 @@ COLOURS = {"WHITE": (255,255,255),
             "TURQUOISE": (0, 255, 255),
             "ORANGE": (255, 128, 0),
             "PINK": (255, 102, 255),
-            "BROWN": (51, 25, 0)}
+            "BROWN": (51, 25, 0),
+            "BLACK": (0,0,0)}
 
 ADDR = '192.168.0.99'
 PORT = 10000
@@ -82,7 +82,7 @@ try:
             else:
                 print('Invalid message {}'.format(response))
         elif responseSplit[0] == "OFF":
-            sense.clear(OFF)
+            sense.clear(COLOURS["BLACK"])
             print("LED Matrix OFF")
         else:
             print('Invalid message {}'.format(response))
