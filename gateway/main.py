@@ -25,6 +25,9 @@ PORT = 10000
 BUFSIZE = 2048
 ADDR = (HOST, PORT)
 
+VALID_FIRST = ["ON", "OFF"]
+VALID_SECOND = ["WHITE", "RED", "BLUE", "GREEN", "PURPLE", "YELLOW"]
+
 class State:
     mqtt_config_topic = '/devices/{}/config'.format(GATEWAY_ID) # This is the topic that the device will receive configuration updates on.
     mqtt_error_topic = '/devices/{}/errors'.format(GATEWAY_ID)  # This is the topic that the device will receive configuration updates on.
@@ -97,10 +100,9 @@ def on_message(unused_client, unused_userdata, message):
     try:
         client_addr = gatewayState.subscriptions[message.topic]
         print('Relaying config[{}] to {}'.format(payload, client_addr))
-        if payload == 'ON' or payload == b'ON':
-            udpSerSock.sendto('ON'.encode('utf8'), client_addr)
-        elif payload == 'OFF' or payload == b'OFF':
-            udpSerSock.sendto('OFF'.encode('utf8'), client_addr)
+        payloadSplit = payload.split(" ")
+        if payloadSplit[0] in VALID_FIRST:
+            udpSerSock.sendto(payload.rstrip().encode('utf8'), client_addr)
         else:
             print('Unrecognized command: {}'.format(payload))
     except KeyError:
