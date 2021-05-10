@@ -1,8 +1,10 @@
+#Send message to the gateway
 def SendCommand(sock, message, server_address):
     sock.sendto(message.encode(), server_address)
     response = sock.recv(4096)
     return response
 
+#Format data into correct form to be sent to gateway
 def MakeMessage(action, device_id, data=''):
     if data:
         return '{{ "device" : "{}", "action":"{}", "data" : "{}" }}'.format(
@@ -10,6 +12,7 @@ def MakeMessage(action, device_id, data=''):
     else:
         return '{{ "device" : "{}", "action":"{}" }}'.format(device_id, action)
 
+#Format then send a message to the gateway
 def RunAction(action, device_id, client_sock, server_address, data='', log = True):
     message = MakeMessage(action, device_id, data)
     if not message:

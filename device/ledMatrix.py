@@ -19,23 +19,25 @@ COLOURS = {"WHITE": (255,255,255),
 ADDR = '192.168.0.99'
 PORT = 10000
 DEVICE_ID = "led-matrix"
-# Create a UDP socket
-client_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-
-server_address = (ADDR, PORT)
 
 print('Starting device {}'.format(DEVICE_ID))
+# Create a UDP socket
+client_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+server_address = (ADDR, PORT)
 
 sense = SenseHat()
 
 try:
+    #Attach to gateway, let cloud IoT know device is online, then subscribe to messages. 
     RunAction('attach', DEVICE_ID, client_sock, server_address)
     RunAction('event',  DEVICE_ID, client_sock, server_address,'LED is online')
     RunAction('subscribe',  DEVICE_ID, client_sock, server_address)
 
     while True:
+        #Get response
         response = client_sock.recv(4096).decode('utf8')
         print('Client received {}'.format(response))
+        #Process response
         responseSplit = response.split(" ")
         if responseSplit[0] == "ON":
             if responseSplit[1] == "MATRIX":
