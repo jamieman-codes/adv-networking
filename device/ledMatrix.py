@@ -28,16 +28,13 @@ print('Starting device {}'.format(DEVICE_ID))
 sense = SenseHat()
 
 def SendCommand(sock, message):
-    print('sending "{}"'.format(message))
     sock.sendto(message.encode(), server_address)
 
     # Receive response
     print('waiting for response')
     response = sock.recv(4096)
-    print('received: "{}"'.format(response))
 
     return response
-
 
 def MakeMessage( action, data=''):
     if data:
@@ -47,16 +44,13 @@ def MakeMessage( action, data=''):
         return '{{ "device" : "{}", "action":"{}" }}'.format(
             DEVICE_ID, action)
 
-
 def RunAction(action, data=''):
-    global client_sock
     message = MakeMessage(action, data)
     if not message:
         return
     print('Send data: {} '.format(message))
     event_response = SendCommand(client_sock, message)
     print('Response: {}'.format(event_response))
-
 
 try:
     RunAction('attach')
@@ -87,5 +81,6 @@ try:
             print('Invalid message {}'.format(response))
 
 finally:
+    RunAction('event', 'LED is offline')
     print('closing socket', file=sys.stderr)
     client_sock.close()

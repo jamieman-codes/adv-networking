@@ -175,16 +175,14 @@ def main():
             message = template.format(device_id, 'event')
             udpSerSock.sendto(message.encode('utf8'), client_addr)
 
-        elif action == 'attach': #Attaches a device ?
+        elif action == 'attach': #Attaches a device 
             print('Sending telemetry event for device {}'.format(device_id))
             attach_topic = '/devices/{}/attach'.format(device_id)
-            auth = ''
-            attach_payload = '{{"authorization" : "{}"}}'.format(auth)
 
             print('Attaching device {}'.format(device_id))
             print(attach_topic)
             response, attach_mid = client.publish(
-                    attach_topic, attach_payload, qos=1)
+                    attach_topic, "", qos=1)
 
             message = template.format(device_id, 'attach')
             udpSerSock.sendto(message.encode('utf8'), client_addr)
