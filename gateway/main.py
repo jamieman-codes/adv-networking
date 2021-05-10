@@ -65,14 +65,14 @@ def on_connect(client, unused_userdata, unused_flags, rc):
     gatewayState.minBackoffTime = 1
 
 def on_disconnect(client, unused_userdata, rc):
-    print('on_disconnect', paho_error(rc))
+    print('disconnect with error:', paho_error(rc))
     gatewayState.backoff = True
 
 def on_publish(unused_client, userdata, mid):
-    print('published: {}'.format(userdata))
+    print('published: {}'.format(mid))
 
 def on_subscribe(unused_client, unused_userdata, mid, granted_qos):
-    print('on_subscribe: mid {}, qos {}'.format(mid, granted_qos))
+    print('subscribe: mid {}, qos {}'.format(mid, granted_qos))
 
 #Callback when the device receives a message on a subscription
 def on_message(unused_client, unused_userdata, message):
@@ -170,21 +170,19 @@ def main():
         template = '{{ "device": "{}", "command": "{}", "status" : "ok" }}'
 
         if action == 'event': #Publishes telemetry data to pub/sub
-            print('Sending telemetry event for device {}'.format(deviceID))
             payload = command["data"]
-
             mqttTopic = '/devices/{}/events'.format(deviceID)
-            print('Publishing message to topic {} with payload \'{}\''.format(mqttTopic, payload))
+
+            print('Publishing message to topic: {} with payload: {}'.format(mqttTopic, payload))
             client.publish(mqttTopic, payload, qos=0) 
 
             message = template.format(deviceID, 'event')
             udpSerSock.sendto(message.encode('utf8'), clientAddr)
 
         elif action == 'attach': #Attaches a device to the gateway
-            print('Sending telemetry event for device {}'.format(deviceID))
             attachTopic = '/devices/{}/attach'.format(deviceID)
 
-            print('Attaching device {}'.format(deviceID))
+            print('Attaching device: {}'.format(deviceID))
             print(attachTopic)
             client.publish(attachTopic, "", qos=1)
 
@@ -192,7 +190,7 @@ def main():
             udpSerSock.sendto(message.encode('utf8'), clientAddr)
 
         elif action == "subscribe": #Subscribes a device to the config for that device
-            print('subscribe config for {}'.format(deviceID))
+            print('Subscribe to config for device: {}'.format(deviceID))
             subscribe_topic = '/devices/{}/config'.format(deviceID)
 
             client.subscribe(subscribe_topic, qos=1)
@@ -203,8 +201,6 @@ def main():
 
         else:
             print('undefined action: {}'.format(action))
-
-    print('Finished.')
 
 if __name__ == '__main__':
     main()
