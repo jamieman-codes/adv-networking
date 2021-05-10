@@ -15,7 +15,7 @@ def MakeMessage(action, device_id, data=''):
         return '{{ "device" : "{}", "action":"{}" }}'.format(device_id, action)
 
 def RunAction(action, device_id, client_sock, server_address, data=''):
-    message = MakeMessage(action, data)
+    message = MakeMessage(action, device_id, data)
     if not message:
         return
     print('Send data: {} '.format(message))
