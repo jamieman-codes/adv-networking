@@ -26,7 +26,7 @@ try:
         p = "{:.3f}".format(sense.get_pressure())
 
         print('Temp: {}, Hum: {}, Pressure: {}'.format(t, h, p))
-        RunAction('event', DEVICE_ID, client_sock, server_address,'temperature={}, humidity={}, pressure={}'.format(t, h, p))
+        RunAction('event', DEVICE_ID, client_sock, server_address,'temperature={}, humidity={}, pressure={}'.format(t, h, p), False)
 
         time.sleep(2)
 

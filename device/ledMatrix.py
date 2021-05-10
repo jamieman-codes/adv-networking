@@ -1,6 +1,7 @@
 import socket
 import sys
 from sense_hat import SenseHat
+from common import RunAction
 
 #Constants
 COLOURS = {"WHITE": (255,255,255),
@@ -27,35 +28,10 @@ print('Starting device {}'.format(DEVICE_ID))
 
 sense = SenseHat()
 
-def SendCommand(sock, message):
-    sock.sendto(message.encode(), server_address)
-
-    # Receive response
-    print('waiting for response')
-    response = sock.recv(4096)
-
-    return response
-
-def MakeMessage( action, data=''):
-    if data:
-        return '{{ "device" : "{}", "action":"{}", "data" : "{}" }}'.format(
-            DEVICE_ID, action, data)
-    else:
-        return '{{ "device" : "{}", "action":"{}" }}'.format(
-            DEVICE_ID, action)
-
-def RunAction(action, data=''):
-    message = MakeMessage(action, data)
-    if not message:
-        return
-    print('Send data: {} '.format(message))
-    event_response = SendCommand(client_sock, message)
-    print('Response: {}'.format(event_response))
-
 try:
-    RunAction('attach')
-    RunAction('event', 'LED is online')
-    RunAction('subscribe')
+    RunAction('attach', DEVICE_ID, client_sock, server_address)
+    RunAction('event',  DEVICE_ID, client_sock, server_address,'LED is online')
+    RunAction('subscribe',  DEVICE_ID, client_sock, server_address)
 
     while True:
         response = client_sock.recv(4096).decode('utf8')
@@ -81,6 +57,6 @@ try:
             print('Invalid message {}'.format(response))
 
 finally:
-    RunAction('event', 'LED is offline')
+    RunAction('event',  DEVICE_ID, client_sock, server_address,'LED is offline')
     print('closing socket', file=sys.stderr)
     client_sock.close()
