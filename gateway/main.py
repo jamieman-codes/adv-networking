@@ -178,7 +178,8 @@ def main():
         elif action == 'attach': #Attaches a device ?
             print('Sending telemetry event for device {}'.format(device_id))
             attach_topic = '/devices/{}/attach'.format(device_id)
-            attach_payload = '{{"authorization" : ""}}'
+            auth = ''
+            attach_payload = '{{"authorization" : "{}"}}'.format(auth)
 
             print('Attaching device {}'.format(device_id))
             print(attach_topic)
