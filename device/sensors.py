@@ -60,8 +60,6 @@ def RunAction(action):
 
 
 try:
-    random.seed()
-    RunAction('detach')
     RunAction('attach')
 
     while True:

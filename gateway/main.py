@@ -33,13 +33,8 @@ class State:
 
     mqtt_bridge_hostname = MQTT_BRIDGE_HOST
     mqtt_bridge_port = MQTT_BRIDGE_PORT
-
-    pending_responses = {} # for all PUBLISH messages which are waiting for PUBACK. The key is 'mid'
-
-    pending_subscribes = {} # SUBSCRIBE messages waiting for SUBACK. The key is 'mid' from Paho.
  
-    subscriptions = {} # for all SUBSCRIPTIONS. The key is subscription topic.
-
+    subscriptions = {} #The key is subscription topic. The value is the IP of device that is subscribed
     connected = False # Indicates if MQTT client is connected or not
 
 gatewayState = State()
@@ -75,23 +70,13 @@ def on_disconnect(client, unused_userdata, rc):
         gatewayState.mqtt_bridge_hostname, gatewayState.mqtt_bridge_port)
 
 def on_publish(unused_client, userdata, mid):
-    """Paho callback when a message is sent to the broker."""
-    print('on_publish, userdata {}, mid {}'.format(userdata, mid))
-
-    try:
-        client_addr, message = gatewayState.pending_responses.pop(mid)
-        print('sending data over UDP {} {}'.format(client_addr, message))
-        udpSerSock.sendto(message, client_addr)
-        print('pending response count {}'.format(
-                len(gatewayState.pending_responses)))
-    except KeyError:
-        print('Unable to find key {}'.format(mid))
+    print('published: {}'.format(userdata))
 
 def on_subscribe(unused_client, unused_userdata, mid, granted_qos):
     print('on_subscribe: mid {}, qos {}'.format(mid, granted_qos))
 
+#Callback when the device receives a message on a subscription
 def on_message(unused_client, unused_userdata, message):
-    """Callback when the device receives a message on a subscription."""
     payload = message.payload.decode('utf8')
     print('Received message \'{}\' on topic \'{}\' with Qos {}'.format(
             payload, message.topic, str(message.qos)))
@@ -99,6 +84,7 @@ def on_message(unused_client, unused_userdata, message):
     try:
         client_addr = gatewayState.subscriptions[message.topic]
         print('Relaying config[{}] to {}'.format(payload, client_addr))
+        #Validate message:
         payloadSplit = payload.split(" ")
         payloadEncoded = payload.rstrip().encode('utf8')
         if payloadSplit[0] == "ON":
@@ -177,7 +163,7 @@ def main():
         device_id = command["device"]
         template = '{{ "device": "{}", "command": "{}", "status" : "ok" }}'
 
-        if action == 'event':
+        if action == 'event': #Sends event info ?
             print('Sending telemetry event for device {}'.format(device_id))
             payload = command["data"]
 
@@ -189,11 +175,10 @@ def main():
             message = template.format(device_id, 'event')
             udpSerSock.sendto(message.encode('utf8'), client_addr)
 
-        elif action == 'attach':
+        elif action == 'attach': #Attaches a device ?
             print('Sending telemetry event for device {}'.format(device_id))
             attach_topic = '/devices/{}/attach'.format(device_id)
-            auth = ''  # TODO:    auth = command["jwt"]
-            attach_payload = '{{"authorization" : "{}"}}'.format(auth)
+            attach_payload = '{{"authorization" : ""}}'
 
             print('Attaching device {}'.format(device_id))
             print(attach_topic)
@@ -202,17 +187,8 @@ def main():
 
             message = template.format(device_id, 'attach')
             udpSerSock.sendto(message.encode('utf8'), client_addr)
-        elif action == 'detach':
-            detach_topic = '/devices/{}/detach'.format(device_id)
-            print(detach_topic)
 
-            res, mid = client.publish(detach_topic, "{}", qos=1)
-
-            message = template.format(res, mid)
-            print('sending data over UDP {} {}'.format(client_addr, message))
-            udpSerSock.sendto(message.encode('utf8'), client_addr)
-
-        elif action == "subscribe":
+        elif action == "subscribe": #Subscribes a device to the config for that device
             print('subscribe config for {}'.format(device_id))
             subscribe_topic = '/devices/{}/config'.format(device_id)
 

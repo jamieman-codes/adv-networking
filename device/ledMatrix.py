@@ -59,7 +59,6 @@ def RunAction(action, data=''):
 
 
 try:
-    RunAction('detach')
     RunAction('attach')
     RunAction('event', 'LED is online')
     RunAction('subscribe')
