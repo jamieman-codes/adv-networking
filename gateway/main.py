@@ -24,19 +24,21 @@ HOST = ''
 PORT = 10000
 BUFSIZE = 2048
 ADDR = (HOST, PORT)
+MAX_BACKOFF_TIME = 32 #The maximum backoff time before giving up
 
 COLOURS = ["WHITE", "RED", "BLUE", "GREEN", "PURPLE", "YELLOW", "TURQUOISE", "ORANGE", "PINK", "BROWN", "BLACK"]
 
 class State:
-    mqtt_config_topic = '/devices/{}/config'.format(GATEWAY_ID) # This is the topic that the device will receive configuration updates on.
-    mqtt_error_topic = '/devices/{}/errors'.format(GATEWAY_ID)  # This is the topic that the device will receive configuration updates on.
-
-    mqtt_bridge_hostname = MQTT_BRIDGE_HOST
-    mqtt_bridge_port = MQTT_BRIDGE_PORT
+    mqttConfigTopic = '/devices/{}/config'.format(GATEWAY_ID) # This is the topic that the device will receive configuration updates on.
+    mqttErrorTopic = '/devices/{}/errors'.format(GATEWAY_ID)  # This is the topic that the device will receive configuration updates on.
  
     subscriptions = {} #The key is subscription topic. The value is the IP of device that is subscribed
-    connected = False # Indicates if MQTT client is connected or not
 
+    backoff = False #Whether to backoff before publishing
+    minBackoffTime = 1 # The initial backoff time after a disconnection occurs
+
+
+#Create state and socket
 gatewayState = State()
 udpSerSock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
@@ -57,17 +59,14 @@ def paho_error(rc):
 
 def on_connect(client, unused_userdata, unused_flags, rc):
     print('on_connect', mqtt.connack_string(rc))
-    gatewayState.connected = True
-    client.subscribe(gatewayState.mqtt_config_topic, qos=1)
-    client.subscribe(gatewayState.mqtt_error_topic, qos=0)
+    client.subscribe(gatewayState.mqttConfigTopic, qos=1)
+    client.subscribe(gatewayState.mqttErrorTopic, qos=0)
+    gatewayState.backoff = False
+    gatewayState.minBackoffTime = 1
 
 def on_disconnect(client, unused_userdata, rc):
     print('on_disconnect', paho_error(rc))
-    gatewayState.connected = False
-    # re-connect
-    # NOTE: should implement back-off here, but it's a tutorial
-    client.connect(
-        gatewayState.mqtt_bridge_hostname, gatewayState.mqtt_bridge_port)
+    gatewayState.backoff = True
 
 def on_publish(unused_client, userdata, mid):
     print('published: {}'.format(userdata))
@@ -82,8 +81,8 @@ def on_message(unused_client, unused_userdata, message):
             payload, message.topic, str(message.qos)))
 
     try:
-        client_addr = gatewayState.subscriptions[message.topic]
-        print('Relaying config[{}] to {}'.format(payload, client_addr))
+        clientAddr = gatewayState.subscriptions[message.topic]
+        print('Relaying config[{}] to {}'.format(payload, clientAddr))
         #Validate message:
         payloadSplit = payload.split(" ")
         payloadEncoded = payload.rstrip().encode('utf8')
@@ -97,13 +96,13 @@ def on_message(unused_client, unused_userdata, message):
                         if colour not in COLOURS:
                             print("Invalid colour in matrix: {}".format(colour))
                             return
-                    udpSerSock.sendto(payloadEncoded, client_addr)
+                    udpSerSock.sendto(payloadEncoded, clientAddr)
             elif payloadSplit[1] in COLOURS:
-                udpSerSock.sendto(payloadEncoded, client_addr)
+                udpSerSock.sendto(payloadEncoded, clientAddr)
             else:
                 print('Unrecognized command: {}'.format(payload))
         elif payloadSplit[0] == "OFF":
-            udpSerSock.sendto(payloadEncoded, client_addr)
+            udpSerSock.sendto(payloadEncoded, clientAddr)
         else:
             print('Unrecognized command: {}'.format(payload))
     except KeyError:
@@ -142,60 +141,65 @@ def main():
     #Main loop
     while True:
         client.loop()
-        if gatewayState.connected is False:
-            print('connect status {}'.format(gatewayState.connected))
-            time.sleep(1)
-            continue
 
+        if gatewayState.backoff: #Try to reconnect 
+            if gatewayState.minBackoffTime > MAX_BACKOFF_TIME:
+                print('Exceeded maximum backoff time.')
+                break
+            print("Cannot connect. Backing off for: {}".format(gatewayState.minBackoffTime))
+            time.sleep(gatewayState.minBackoffTime)
+            gatewayState.minBackoffTime *= 2
+            client.connect(MQTT_BRIDGE_HOST, MQTT_BRIDGE_PORT)
+
+        #Try to get data from socket
         try:
-            data, client_addr = udpSerSock.recvfrom(BUFSIZE)
+            data, clientAddr = udpSerSock.recvfrom(BUFSIZE)
         except socket.error:
             continue
         print('[{}]: From Address {}:{} receive data: {}'.format(
-                ctime(), client_addr[0], client_addr[1], data.decode("utf-8")))
+                ctime(), clientAddr[0], clientAddr[1], data.decode("utf-8")))
 
+        #Convert to json
         command = json.loads(data.decode('utf-8'))
         if not command:
             print('invalid json command {}'.format(data))
             continue
 
         action = command["action"]
-        device_id = command["device"]
+        deviceID = command["device"]
         template = '{{ "device": "{}", "command": "{}", "status" : "ok" }}'
 
-        if action == 'event': #Sends event info ?
-            print('Sending telemetry event for device {}'.format(device_id))
+        if action == 'event': #Publishes telemetry data to pub/sub
+            print('Sending telemetry event for device {}'.format(deviceID))
             payload = command["data"]
 
-            mqtt_topic = '/devices/{}/events'.format(device_id)
-            print('Publishing message to topic {} with payload \'{}\''.format(
-                    mqtt_topic, payload))
-            _, event_mid = client.publish(mqtt_topic, payload, qos=0) 
+            mqttTopic = '/devices/{}/events'.format(deviceID)
+            print('Publishing message to topic {} with payload \'{}\''.format(mqttTopic, payload))
+            client.publish(mqttTopic, payload, qos=0) 
 
-            message = template.format(device_id, 'event')
-            udpSerSock.sendto(message.encode('utf8'), client_addr)
+            message = template.format(deviceID, 'event')
+            udpSerSock.sendto(message.encode('utf8'), clientAddr)
 
-        elif action == 'attach': #Attaches a device 
-            print('Sending telemetry event for device {}'.format(device_id))
-            attach_topic = '/devices/{}/attach'.format(device_id)
+        elif action == 'attach': #Attaches a device to the gateway
+            print('Sending telemetry event for device {}'.format(deviceID))
+            attachTopic = '/devices/{}/attach'.format(deviceID)
 
-            print('Attaching device {}'.format(device_id))
-            print(attach_topic)
-            response, attach_mid = client.publish(
-                    attach_topic, "", qos=1)
+            print('Attaching device {}'.format(deviceID))
+            print(attachTopic)
+            client.publish(attachTopic, "", qos=1)
 
-            message = template.format(device_id, 'attach')
-            udpSerSock.sendto(message.encode('utf8'), client_addr)
+            message = template.format(deviceID, 'attach')
+            udpSerSock.sendto(message.encode('utf8'), clientAddr)
 
         elif action == "subscribe": #Subscribes a device to the config for that device
-            print('subscribe config for {}'.format(device_id))
-            subscribe_topic = '/devices/{}/config'.format(device_id)
+            print('subscribe config for {}'.format(deviceID))
+            subscribe_topic = '/devices/{}/config'.format(deviceID)
 
-            _, mid = client.subscribe(subscribe_topic, qos=1)
-            message = template.format(device_id, 'subscribe')
-            gatewayState.subscriptions[subscribe_topic] = client_addr
+            client.subscribe(subscribe_topic, qos=1)
+            message = template.format(deviceID, 'subscribe')
+            gatewayState.subscriptions[subscribe_topic] = clientAddr
 
-            udpSerSock.sendto(message.encode('utf8'), client_addr)
+            udpSerSock.sendto(message.encode('utf8'), clientAddr)
 
         else:
             print('undefined action: {}'.format(action))
