@@ -37,26 +37,34 @@
     </head>
     <body>
         <h1>Welcome to the Pi controller!</h1>
-        <form id="ledForm">
-            <label for="colour">Choose a colour:</label>
-            <select name="colour" id="colour" onchange="displayGrid()">
-                <option value="WHITE">White</option>
-                <option value="RED">Red</option>
-                <option value="BLUE">Blue</option>
-                <option value="GREEN">Green</option>
-                <option value="PURPLE">Purple</option>
-                <option value="YELLOW">Yellow</option>
-                <option value="TURQUOISE">Turquoise</option>
-                <option value="ORANGE">Orange</option>
-                <option value="PINK">Pink</option>
-                <option value="BROWN">Brown</option>
-                <option value="BLACK">Off</option>
-                <option value="CUSTOM">Custom Grid</option>
-            </select>
-            <div id="paintSelector"></div>
-            <table id="pixelArt"></table>
-            <input type="submit" value="Change Colour"/>
-        </form>
+        <div id="ledMatrix">
+            <h2>LED Matrix</h2>
+            <div id="ledMatrixText">Pulling subscription...</div>
+            <form id="ledForm">
+                <label for="colour">Choose a colour:</label>
+                <select name="colour" id="colour" onchange="displayGrid()">
+                    <option value="WHITE">White</option>
+                    <option value="RED">Red</option>
+                    <option value="BLUE">Blue</option>
+                    <option value="GREEN">Green</option>
+                    <option value="PURPLE">Purple</option>
+                    <option value="YELLOW">Yellow</option>
+                    <option value="TURQUOISE">Turquoise</option>
+                    <option value="ORANGE">Orange</option>
+                    <option value="PINK">Pink</option>
+                    <option value="BROWN">Brown</option>
+                    <option value="BLACK">Off</option>
+                    <option value="CUSTOM">Custom Grid</option>
+                </select>
+                <div id="paintSelector"></div>
+                <table id="pixelArt"></table>
+                <input type="submit" value="Change Colour"/>
+            </form>
+        </div>
+        <div id="sensors">
+            <h2>Sensors</h2>
+            <div id="sensorText">Pulling subscription...</div>
+        </div>
 
         <script>
             let paintColours = {"WHITE": "#FFFFFF",
@@ -75,11 +83,43 @@
             let canvas = document.getElementById("pixelArt")
             let paintSelector = document.getElementById("paintSelector");
 
-            let paint = ["WHITE","#FFFFFF"]
+            let paint = ["BLACK","#000000"]
             let matrix = []
 
-            //color.addEventListener("click", function(){});
             document.getElementById("ledForm").addEventListener('submit', handleForm);
+
+            checkSensor()
+            checkledMatrix()
+            setInterval(checkSensor, 10000)
+            setInterval(checkledMatrix, 60000)
+
+            function checkSensor(){ 
+                fetch("/pullSubscription", {
+                    method: "POST",
+                    body: "sensors"
+                }).then( (res) => {
+                    return res.text().then((text) => {
+                        if(text === "Sensor is offline" || text === "Sensor is online"){
+                            document.getElementById("sensorText").innerHTML = text
+                        }else{
+                            var values = text.split(",")
+                            var display = "Temperature: " + values[0] + "<br>Humidity: " + values[1] + "<br>Pressure: " + values[2]
+                            document.getElementById("sensorText").innerHTML = display
+                        }
+                    })
+                })
+            }
+
+            function checkledMatrix(){ 
+                fetch("/pullSubscription", {
+                    method: "POST",
+                    body: "led-matrix"
+                }).then( (res) => {
+                    return res.text().then((text) => {
+                        document.getElementById("ledMatrixText").innerHTML = text
+                    })
+                })
+            }
 
             function handleForm(event) {
                 if(colour.value == "CUSTOM"){
@@ -107,18 +147,18 @@
                 if(colour.value == "CUSTOM"){
                     paintSelector.innerHTML = `<label for="paint">Paint Colour:</label>
                                                 <select name="paint" id="paint" onchange="updatePaint()">
-                                                <option value="WHITE">White</option>
-                                                <option value="RED">Red</option>
-                                                <option value="BLUE">Blue</option>
-                                                <option value="GREEN">Green</option>
-                                                <option value="PURPLE">Purple</option>
-                                                <option value="YELLOW">Yellow</option>
-                                                <option value="TURQUOISE">Turquoise</option>
-                                                <option value="ORANGE">Orange</option>
-                                                <option value="PINK">Pink</option>
-                                                <option value="BROWN">Brown</option>
-                                                <option value="BLACK">Black</option>
-                                            </select>`
+                                                    <option value="BLACK">Black</option>
+                                                    <option value="WHITE">White</option>
+                                                    <option value="RED">Red</option>
+                                                    <option value="BLUE">Blue</option>
+                                                    <option value="GREEN">Green</option>
+                                                    <option value="PURPLE">Purple</option>
+                                                    <option value="YELLOW">Yellow</option>
+                                                    <option value="TURQUOISE">Turquoise</option>
+                                                    <option value="ORANGE">Orange</option>
+                                                    <option value="PINK">Pink</option>
+                                                    <option value="BROWN">Brown</option>
+                                                </select>`
                     //Create 8x8 grid
                     var pos = 0
                     for (let r=0; r<8; r++){
@@ -127,8 +167,9 @@
                             const cell = row.insertCell(c);
                             cell.addEventListener("click", fillSquare);
                             cell.setAttribute("pos", pos)
+                            cell.setAttribute("style", "background-color: #000000")
                             pos += 1
-                            matrix.push("WHITE")
+                            matrix.push("BLACK")
                         }
                     }
                 }else{

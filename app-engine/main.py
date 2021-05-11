@@ -12,3 +12,8 @@ def updateLedMatrix():
     colour = request.get_data().decode("utf-8")
     updateDevice("led-matrix", "ON {}".format(colour))
     return "Success"
+
+@app.route("/pullSubscription", methods = ['POST'])
+def pullSubscription():
+    sub = request.get_data().decode("utf-8")
+    return pullSub(sub)

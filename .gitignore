@@ -1,2 +1,4 @@
 cloud-iot-gateways-rpi
 app-engine/advnetworking-4754ad8f2fa0.json
+/app-engine/__pycache__/main.cpython-38.pyc
+/app-engine/__pycache__/devices.cpython-38.pyc
