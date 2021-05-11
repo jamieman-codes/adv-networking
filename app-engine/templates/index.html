@@ -1,1 +1,156 @@
-<b>Hello, {{ name }}!<b>
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Pi Controller</title>
+        <style>
+            table, tr, td {
+            border: 1px solid #abc;
+            }
+
+            table {
+            border-collapse: collapse;
+            margin: 10px;
+            }
+
+            tr {
+            height: 25px;
+            }
+
+            td {
+            width: 25px;
+            }
+
+            @media screen and (max-width: 480px) {
+                table {
+                    margin: 10px auto;
+                }
+
+                    tr {
+                    height: 30px;
+                }
+
+                td {
+                    width: 30px;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <h1>Welcome to the Pi controller!</h1>
+        <form id="ledForm">
+            <label for="colour">Choose a colour:</label>
+            <select name="colour" id="colour" onchange="displayGrid()">
+                <option value="WHITE">White</option>
+                <option value="RED">Red</option>
+                <option value="BLUE">Blue</option>
+                <option value="GREEN">Green</option>
+                <option value="PURPLE">Purple</option>
+                <option value="YELLOW">Yellow</option>
+                <option value="TURQUOISE">Turquoise</option>
+                <option value="ORANGE">Orange</option>
+                <option value="PINK">Pink</option>
+                <option value="BROWN">Brown</option>
+                <option value="BLACK">Off</option>
+                <option value="CUSTOM">Custom Grid</option>
+            </select>
+            <div id="paintSelector"></div>
+            <table id="pixelArt"></table>
+            <input type="submit" value="Change Colour"/>
+        </form>
+
+        <script>
+            let paintColours = {"WHITE": "#FFFFFF",
+                                "RED": "#FF0000",
+                                "BLUE" : "#0000FF",
+                                "GREEN" : "#00FF00",
+                                "PURPLE": "#990099",
+                                "YELLOW": "#FFFF00",
+                                "TURQUOISE": "#00FFFF",
+                                "ORANGE": "#FF8000",
+                                "PINK": "#FF66FF",
+                                "BROWN": "#331900",
+                                "BLACK": "#000000"}
+
+            let colour = document.getElementById("colour")
+            let canvas = document.getElementById("pixelArt")
+            let paintSelector = document.getElementById("paintSelector");
+
+            let paint = ["WHITE","#FFFFFF"]
+            let matrix = []
+
+            //color.addEventListener("click", function(){});
+            document.getElementById("ledForm").addEventListener('submit', handleForm);
+
+            function handleForm(event) {
+                if(colour.value == "CUSTOM"){
+                    var matrixStr = ""
+                    for(var i = 0; i < matrix.length; i++){
+                        matrixStr += matrix[i]
+                        if(i!=63){
+                            matrixStr +=","
+                        }
+                    }
+                    fetch("/ledMatrix",{
+                        method: "POST",
+                        body: "MATRIX " + matrixStr
+                    }) 
+                }else{
+                    fetch("/ledMatrix",{
+                        method: "POST",
+                        body: colour.value
+                    }) 
+                }
+                event.preventDefault(); 
+            }
+
+            function displayGrid(){
+                if(colour.value == "CUSTOM"){
+                    paintSelector.innerHTML = `<label for="paint">Paint Colour:</label>
+                                                <select name="paint" id="paint" onchange="updatePaint()">
+                                                <option value="WHITE">White</option>
+                                                <option value="RED">Red</option>
+                                                <option value="BLUE">Blue</option>
+                                                <option value="GREEN">Green</option>
+                                                <option value="PURPLE">Purple</option>
+                                                <option value="YELLOW">Yellow</option>
+                                                <option value="TURQUOISE">Turquoise</option>
+                                                <option value="ORANGE">Orange</option>
+                                                <option value="PINK">Pink</option>
+                                                <option value="BROWN">Brown</option>
+                                                <option value="BLACK">Black</option>
+                                            </select>`
+                    //Create 8x8 grid
+                    var pos = 0
+                    for (let r=0; r<8; r++){
+                        const row = canvas.insertRow(r);
+                        for (let c=0; c<8; c++){
+                            const cell = row.insertCell(c);
+                            cell.addEventListener("click", fillSquare);
+                            cell.setAttribute("pos", pos)
+                            pos += 1
+                            matrix.push("WHITE")
+                        }
+                    }
+                }else{
+                    matrix = []
+                    paint = ["WHITE","#FFFFFF"]
+                    paintSelector.innerHTML = ""
+                    while (canvas.firstChild){
+                        canvas.removeChild(canvas.firstChild);
+                    }
+                }
+            }
+
+            function fillSquare () {
+                this.setAttribute("style", `background-color: ${paint[1]}`);
+                var pos = this.getAttribute("pos")
+                matrix[pos] = paint[0]
+            }
+
+            function updatePaint() {
+                var paintChoice =  document.getElementById("paint").value
+                paint = [paintChoice, paintColours[paintChoice]]
+            }
+        </script>
+    </body>
+</html>

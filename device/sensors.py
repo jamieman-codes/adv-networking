@@ -32,7 +32,7 @@ try:
         #Publish sensor readings
         RunAction('event', DEVICE_ID, client_sock, server_address,'{},{},{}'.format(t, h, p), False)
 
-        time.sleep(2)
+        time.sleep(10)
 
 
 finally:

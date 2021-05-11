@@ -39,4 +39,4 @@ def pullSub(subID, callback):
             streaming_pull_future.cancel()
 
 #updateDevice("led-matrix", "ON BLUE")
-pullSub("sensors", sensorCallback)
+#pullSub("sensors", sensorCallback)
