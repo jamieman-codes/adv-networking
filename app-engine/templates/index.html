@@ -103,7 +103,7 @@
                             document.getElementById("sensorText").innerHTML = text
                         }else{
                             var values = text.split(",")
-                            var display = "Temperature: " + values[0] + "<br>Humidity: " + values[1] + "<br>Pressure: " + values[2]
+                            var display = "Temperature: " + values[0] + "°C<br>Humidity: " + values[1] + "%<br>Pressure: " + values[2] + " mbar"
                             document.getElementById("sensorText").innerHTML = display
                         }
                     })
